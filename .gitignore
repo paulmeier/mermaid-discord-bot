@@ -1,23 +1,24 @@
-# Byte-compiled / optimized / DLL files
+# Dependencies
+node_modules/
+
+# Environment – never commit secrets
+.env
+
+# Temporary render artefacts
+*.png
+*.mmd
+
+# Python leftovers (from original template)
 __pycache__/
 *.py[codz]
-*$py.class
-
-# C extensions
 *.so
-
-# Distribution / packaging
-.Python
 build/
-develop-eggs/
 dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
+
+# Editor / OS
+.DS_Store
+.vscode/
+*.swp
 var/
 wheels/
 share/python-wheels/

@@ -1,0 +1,24 @@
+services:
+  bot:
+    build: .
+    restart: unless-stopped
+    environment:
+      # Required
+      DISCORD_TOKEN: ${DISCORD_TOKEN}
+      # Mermaid rendering options
+      MERMAID_THEME: ${MERMAID_THEME:-default}
+      MERMAID_BACKGROUND: ${MERMAID_BACKGROUND:-white}
+      # Rate limiting & limits
+      RENDER_COOLDOWN_MS: ${RENDER_COOLDOWN_MS:-10000}
+      MAX_DIAGRAMS_PER_MESSAGE: ${MAX_DIAGRAMS_PER_MESSAGE:-3}
+      RENDER_TIMEOUT_MS: ${RENDER_TIMEOUT_MS:-60000}
+    # Chromium needs extra shared memory to render without crashing.
+    # 256 MB is sufficient for typical diagrams.
+    shm_size: '256m'
+    # Mount a named volume for /tmp so the healthcheck file persists across
+    # container restarts within the same compose project (optional but tidy).
+    volumes:
+      - bot_tmp:/tmp
+
+volumes:
+  bot_tmp:
