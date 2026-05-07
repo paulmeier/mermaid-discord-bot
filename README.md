@@ -181,6 +181,100 @@ Discord message with ```mermaid block
 
 ---
 
+## CI/CD — Auto-versioning, Changelogs, and Docker Hub
+
+Two GitHub Actions workflows handle the full release pipeline automatically.
+
+### Workflows
+
+| File | Trigger | What it does |
+|---|---|---|
+| [`release.yml`](.github/workflows/release.yml) | Push to `main` | Runs semantic-release → cuts a version tag → pushes Docker image |
+| [`docker-publish.yml`](.github/workflows/docker-publish.yml) | Pull request to `main` | Build-only validation, no push |
+
+### How releases work (fully automated)
+
+```
+git push / PR merged to main
+         │
+         ▼
+  semantic-release inspects commits since last tag
+  using the Conventional Commits spec
+         │
+         ├─ no releasable changes? → stops here, no new version
+         │
+         ▼
+  Determines next SemVer:
+    fix:           → patch  (1.0.0 → 1.0.1)
+    feat:          → minor  (1.0.0 → 1.1.0)
+    BREAKING CHANGE → major  (1.0.0 → 2.0.0)
+         │
+         ▼
+  Updates CHANGELOG.md
+  Commits changelog back to main   [skip ci]
+  Creates git tag  v1.x.x
+  Publishes GitHub Release
+         │
+         ▼  (docker job starts)
+  Builds linux/amd64 + linux/arm64
+  Pushes to Docker Hub:
+    :1.x.x   :1.x   :1   :latest
+  Updates Docker Hub description from README
+```
+
+### Required Repository Secrets
+
+Go to **Settings → Secrets and variables → Actions** in your GitHub repo and add:
+
+| Secret | Value |
+|---|---|
+| `DOCKERHUB_USERNAME` | Your Docker Hub username |
+| `DOCKERHUB_TOKEN` | A Docker Hub **Access Token** (not your password) — create one at [hub.docker.com/settings/security](https://hub.docker.com/settings/security) |
+
+> **Branch protection note:** `@semantic-release/git` pushes the changelog commit
+> directly to `main` using `GITHUB_TOKEN`. If your repo has branch protection rules
+> that require PRs, go to **Settings → Branches → main** and enable
+> **"Allow specified actors to bypass required pull requests"**, adding the GitHub
+> Actions app. Alternatively, replace `GITHUB_TOKEN` in the workflow with a PAT
+> that has `repo` scope.
+
+### Commit message conventions
+
+This project uses [Conventional Commits](https://www.conventionalcommits.org/).
+Stick to this format to get automatic version bumps:
+
+```
+feat: add support for dark theme diagrams       → minor bump
+fix: handle empty mermaid blocks gracefully     → patch bump
+docs: update README                             → no bump
+chore: update dependencies                      → no bump
+
+feat!: remove command-based rendering           → major bump
+# or equivalently:
+feat: remove command-based rendering
+
+BREAKING CHANGE: commands are no longer supported
+```
+
+### Using the Published Image
+
+Replace `<username>` with your Docker Hub username:
+
+```yaml
+# docker-compose.yml override
+services:
+  bot:
+    image: <username>/mermaid-discord-bot:latest
+```
+
+Or pull directly:
+
+```bash
+docker pull <username>/mermaid-discord-bot:latest
+```
+
+---
+
 ## License
 
 MIT
